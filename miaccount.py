@@ -5,6 +5,7 @@ import logging
 import os
 import random
 import string
+import time
 from urllib import parse
 from aiohttp import ClientSession
 
@@ -48,8 +49,19 @@ class MiAccount:
             MiTokenStore(token_store) if isinstance(token_store, str) else token_store
         )
         self.token = token_store is not None and self.token_store.load_token()
+        self.login_attempts = 0
+        self.max_login_attempts = 3
+        self.last_login_time = 0
+        self.login_cooldown = 300  # 5分钟冷却时间
 
     async def login(self, sid):
+        # 检查是否需要冷却
+        current_time = time.time()
+        if self.login_attempts >= self.max_login_attempts and current_time - self.last_login_time < self.login_cooldown:
+            remaining_time = int(self.login_cooldown - (current_time - self.last_login_time))
+            _LOGGER.error(f"登录尝试次数过多，请等待 {remaining_time} 秒后再试")
+            return False
+
         if not self.token:
             self.token = {"deviceId": get_random(16).upper()}
         try:
@@ -66,7 +78,19 @@ class MiAccount:
                 }
                 resp = await self._serviceLogin("serviceLoginAuth2", data)
                 if resp["code"] != 0:
-                    raise Exception(resp)
+                    # 处理验证码错误
+                    if resp["code"] == 87001 and resp.get("type") == "manMachine":
+                        self.login_attempts += 1
+                        self.last_login_time = current_time
+                        _LOGGER.error(f"登录需要验证码，请尝试以下解决方法：")
+                        _LOGGER.error(f"1. 打开小米官网 https://account.xiaomi.com 手动登录一次")
+                        _LOGGER.error(f"2. 登录成功后，再次运行此程序")
+                        _LOGGER.error(f"3. 如果仍然失败，请等待几分钟后再试")
+                        _LOGGER.error(f"4. 确保您的账号密码正确")
+                        return False
+                    else:
+                        _LOGGER.error(f"登录失败，错误码: {resp['code']}, 描述: {resp.get('desc', '未知错误')}")
+                        return False
 
             self.token["userId"] = resp["userId"]
             self.token["passToken"] = resp["passToken"]
@@ -77,6 +101,9 @@ class MiAccount:
             self.token[sid] = (resp["ssecurity"], serviceToken)
             if self.token_store:
                 self.token_store.save_token(self.token)
+            
+            # 登录成功，重置尝试次数
+            self.login_attempts = 0
             return True
 
         except Exception as e:

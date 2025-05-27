@@ -1,12 +1,17 @@
 @echo off
 chcp 65001 > nul
-title MIGPT
+title MIGPT-易 智能助手控制面板
 
 :menu
 cls
-echo ====================================
-echo            MIGPT MENU
-echo ====================================
+echo ============================================
+echo           MIGPT-易 智能助手控制面板
+echo ============================================
+echo.
+echo  MIGPT-易 - 让您的小爱同学秒变AI助手
+echo  支持多设备、多模型、HomeAssistant集成
+echo.
+echo ============================================
 echo.
 call echo  1) Start MIGPT     (启动程序)
 call echo  2) Settings        (配置设置)
@@ -15,9 +20,11 @@ call echo  4) Create Basic    (便携版)
 call echo  5) Full Package    (完整版)
 call echo  6) Exit            (退出程序)
 echo.
-echo ====================================
+echo ============================================
+echo  首次使用请先选择3安装依赖，再选择2进行配置
+echo ============================================
 
-set /p choice=Choose (1-6): 
+set /p choice=请选择操作 (1-6): 
 
 if "%choice%"=="1" goto start_program
 if "%choice%"=="2" goto open_config
@@ -26,71 +33,119 @@ if "%choice%"=="4" goto create_portable
 if "%choice%"=="5" goto create_bundled_portable
 if "%choice%"=="6" goto exit_program
 
-echo Invalid choice!
+echo 输入有误，请重新选择!
 timeout /t 2 > nul
 goto menu
 
 :start_program
 cls
-echo 正在启动MIGPT程序...
-echo 注意: 如果在配置中启用了API服务器自动启动，API服务器将会自动启动
+echo ============================================
+echo             正在启动MIGPT-易...
+echo ============================================
 echo.
-python -m MIGPT
+echo 注意: 如果在配置中启用了API服务器自动启动，
+echo       API服务器将会自动启动
+echo.
+echo 常用命令:
+echo  - help     : 显示帮助信息
+echo  - status   : 显示当前状态
+echo  - select   : 重新选择设备
+echo  - on/off   : 开启/关闭AI回答模式
+echo.
+
+:: 检查Python是否可用
+where python >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+    echo [错误] 未检测到Python，请先安装Python 3.8或更高版本
+    echo 您可以从 https://www.python.org/downloads/ 下载Python
+    pause
+    goto menu
+)
+
+:: 使用cmd /k保持窗口打开，即使发生错误
+start cmd /k "python -m MIGPT || (echo. && echo [错误] 程序执行失败，请查看上方错误信息 && pause)"
 goto menu
 
 :open_config
 cls
-echo 正在打开配置界面...
+echo ============================================
+echo           正在打开MIGPT-易配置界面
+echo ============================================
 echo.
-python config_gui.py
+echo 配置界面包含以下选项卡:
+echo  - 基本设置: 小米账号和设备设置
+echo  - API设置: 大模型API配置
+echo  - HomeAssistant: 智能家居集成
+echo  - 高级设置: JSON配置直接编辑
+echo.
+
+:: 检查Python是否可用
+where python >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+    echo [错误] 未检测到Python，请先安装Python 3.8或更高版本
+    echo 您可以从 https://www.python.org/downloads/ 下载Python
+    pause
+    goto menu
+)
+
+:: 使用cmd /k保持窗口打开，即使发生错误
+start cmd /k "python config_gui.py || (echo. && echo [错误] 配置界面启动失败，请查看上方错误信息 && pause)"
 goto menu
 
 :install_deps
 cls
 echo =============================================
-echo        MIGPT 安装和设置向导
+echo        MIGPT-易 安装和设置向导
 echo =============================================
 echo.
 
 :: 检查Python环境
 where python >nul 2>nul
 if %ERRORLEVEL% neq 0 (
-    echo 未检测到Python，请先安装Python 3.8或更高版本
+    echo [错误] 未检测到Python，请先安装Python 3.8或更高版本
     echo 您可以从 https://www.python.org/downloads/ 下载Python
     pause
     goto menu
 )
 
 :: 显示Python版本
+echo [信息] 检测到Python版本:
 python --version
 echo.
 
 :: 清理缓存
-echo 正在清理缓存文件...
+echo [信息] 正在清理缓存文件...
 if exist __pycache__ rmdir /s /q __pycache__
 
 :: 安装依赖
-echo 正在安装依赖项...
+echo [信息] 正在安装依赖项...
 pip install -r requirements.txt
+if %ERRORLEVEL% neq 0 (
+    echo [错误] 依赖安装失败，请检查网络连接和pip是否正常
+    echo 您可以尝试手动执行: pip install -r requirements.txt
+    pause
+    goto menu
+)
 
 echo.
-echo 安装完成！按任意键返回主菜单...
+echo [成功] 安装完成！按任意键返回主菜单...
 pause > nul
 goto menu
 
 :create_portable
 cls
 echo =============================================
-echo        MIGPT 便携版打包工具
+echo        MIGPT-易 便携版打包工具
 echo =============================================
 echo.
-echo 此工具将创建一个便携版本的MIGPT，可复制到其他电脑使用
+echo 此工具将创建一个便携版本的MIGPT-易，可复制到其他电脑使用
+echo 便携版需要目标电脑已安装Python环境
 echo.
 
 :: 创建目标目录
 if not exist "portable_MIGPT\" mkdir "portable_MIGPT"
 
-echo 正在清理旧版本...
+echo [信息] 正在清理旧版本...
 :: 清理目录但保留配置
 if exist "portable_MIGPT\config.json" (
     copy "portable_MIGPT\config.json" "temp_config.json" >nul
@@ -103,7 +158,7 @@ if exist "portable_MIGPT\config.json" (
     mkdir "portable_MIGPT"
 )
 
-echo 正在复制必要文件...
+echo [信息] 正在复制必要文件...
 
 :: 复制文件
 copy "*.py" "portable_MIGPT\" >nul
@@ -111,7 +166,7 @@ copy "migpt.bat" "portable_MIGPT\" >nul
 copy "requirements.txt" "portable_MIGPT\" >nul
 copy "LICENSE" "portable_MIGPT\" >nul
 copy "README.md" "portable_MIGPT\" >nul
-copy "README_QIANFAN.md" "portable_MIGPT\" >nul
+if exist "README_QIANFAN.md" copy "README_QIANFAN.md" "portable_MIGPT\" >nul
 copy ".gitignore" "portable_MIGPT\" >nul
 
 if exist "config.json" (
@@ -119,18 +174,18 @@ if exist "config.json" (
     set /p include_config=
     if /i "%include_config%"=="Y" (
         copy "config.json" "portable_MIGPT\" >nul
-        echo 已包含配置文件
+        echo [信息] 已包含配置文件
     ) else (
-        echo 已排除配置文件
+        echo [信息] 已排除配置文件
     )
 ) else (
-    echo 未找到配置文件，首次启动时需要配置
+    echo [警告] 未找到配置文件，首次启动时需要配置
 )
 
 :: 创建启动脚本
 echo @echo off > "portable_MIGPT\启动MIGPT.bat"
 echo chcp 65001 ^> nul >> "portable_MIGPT\启动MIGPT.bat"
-echo title MIGPT 便携版 >> "portable_MIGPT\启动MIGPT.bat"
+echo title MIGPT-易 便携版 >> "portable_MIGPT\启动MIGPT.bat"
 echo. >> "portable_MIGPT\启动MIGPT.bat"
 echo echo 正在检查环境... >> "portable_MIGPT\启动MIGPT.bat"
 echo. >> "portable_MIGPT\启动MIGPT.bat"
@@ -146,23 +201,43 @@ echo. >> "portable_MIGPT\启动MIGPT.bat"
 echo :: 检查配置文件 >> "portable_MIGPT\启动MIGPT.bat"
 echo if not exist config.json ( >> "portable_MIGPT\启动MIGPT.bat"
 echo     echo 未找到配置文件，将为您打开配置界面 >> "portable_MIGPT\启动MIGPT.bat"
-echo     python config_gui.py >> "portable_MIGPT\启动MIGPT.bat"
+echo     start cmd /k "python config_gui.py || (echo. ^&^& echo [错误] 配置界面启动失败 ^&^& pause)" >> "portable_MIGPT\启动MIGPT.bat"
+echo     exit /b >> "portable_MIGPT\启动MIGPT.bat"
 echo ) >> "portable_MIGPT\启动MIGPT.bat"
 echo. >> "portable_MIGPT\启动MIGPT.bat"
 echo :: 清理缓存 >> "portable_MIGPT\启动MIGPT.bat"
 echo if exist __pycache__ rmdir /s /q __pycache__ >> "portable_MIGPT\启动MIGPT.bat"
 echo. >> "portable_MIGPT\启动MIGPT.bat"
-echo echo 正在启动MIGPT便携版... >> "portable_MIGPT\启动MIGPT.bat"
-echo python -m MIGPT >> "portable_MIGPT\启动MIGPT.bat"
-echo. >> "portable_MIGPT\启动MIGPT.bat"
-echo pause >> "portable_MIGPT\启动MIGPT.bat"
+echo echo 正在启动MIGPT-易便携版... >> "portable_MIGPT\启动MIGPT.bat"
+echo start cmd /k "python -m MIGPT || (echo. ^&^& echo [错误] 程序执行失败，请查看上方错误信息 ^&^& pause)" >> "portable_MIGPT\启动MIGPT.bat"
+echo exit /b >> "portable_MIGPT\启动MIGPT.bat"
+
+:: 创建直接启动配置界面的脚本
+echo @echo off > "portable_MIGPT\配置MIGPT.bat"
+echo chcp 65001 ^> nul >> "portable_MIGPT\配置MIGPT.bat"
+echo title MIGPT-易 配置界面 >> "portable_MIGPT\配置MIGPT.bat"
+echo. >> "portable_MIGPT\配置MIGPT.bat"
+echo echo 正在检查环境... >> "portable_MIGPT\配置MIGPT.bat"
+echo. >> "portable_MIGPT\配置MIGPT.bat"
+echo :: 检查Python >> "portable_MIGPT\配置MIGPT.bat"
+echo where python ^>nul 2^>nul >> "portable_MIGPT\配置MIGPT.bat"
+echo if %%ERRORLEVEL%% neq 0 ( >> "portable_MIGPT\配置MIGPT.bat"
+echo     echo 未检测到Python，请先安装Python 3.8或更高版本 >> "portable_MIGPT\配置MIGPT.bat"
+echo     echo 您可以从 https://www.python.org/downloads/ 下载Python >> "portable_MIGPT\配置MIGPT.bat"
+echo     pause >> "portable_MIGPT\配置MIGPT.bat"
+echo     exit /b 1 >> "portable_MIGPT\配置MIGPT.bat"
+echo ) >> "portable_MIGPT\配置MIGPT.bat"
+echo. >> "portable_MIGPT\配置MIGPT.bat"
+echo echo 正在启动MIGPT-易配置界面... >> "portable_MIGPT\配置MIGPT.bat"
+echo start cmd /k "python config_gui.py || (echo. ^&^& echo [错误] 配置界面启动失败 ^&^& pause)" >> "portable_MIGPT\配置MIGPT.bat"
+echo exit /b >> "portable_MIGPT\配置MIGPT.bat"
 
 echo.
 echo =============================================
 echo         便携版打包完成！
 echo =============================================
 echo.
-echo MIGPT便携版已创建在portable_MIGPT文件夹中。
+echo MIGPT-易便携版已创建在portable_MIGPT文件夹中。
 echo 您可以将此文件夹复制到其他电脑使用。
 echo.
 pause
@@ -171,7 +246,7 @@ goto menu
 :create_bundled_portable
 cls
 echo =============================================
-echo      MIGPT 完整版打包工具(含依赖)
+echo      MIGPT-易 完整版打包工具(含依赖)
 echo =============================================
 echo.
 echo 此工具将创建包含所有依赖的完整版本
@@ -186,7 +261,7 @@ if /i not "%continue_bundle%"=="Y" goto menu
 :: 创建目标目录
 if not exist "portable_MIGPT_Full\" mkdir "portable_MIGPT_Full"
 
-echo 正在清理旧版本...
+echo [信息] 正在清理旧版本...
 :: 清理目录但保留配置
 if exist "portable_MIGPT_Full\config.json" (
     copy "portable_MIGPT_Full\config.json" "temp_config.json" >nul
@@ -199,7 +274,7 @@ if exist "portable_MIGPT_Full\config.json" (
     mkdir "portable_MIGPT_Full"
 )
 
-echo 正在复制必要文件...
+echo [信息] 正在复制必要文件...
 
 :: 复制文件
 copy "*.py" "portable_MIGPT_Full\" >nul
@@ -207,7 +282,7 @@ copy "migpt.bat" "portable_MIGPT_Full\" >nul
 copy "requirements.txt" "portable_MIGPT_Full\" >nul
 copy "LICENSE" "portable_MIGPT_Full\" >nul
 copy "README.md" "portable_MIGPT_Full\" >nul
-copy "README_QIANFAN.md" "portable_MIGPT_Full\" >nul
+if exist "README_QIANFAN.md" copy "README_QIANFAN.md" "portable_MIGPT_Full\" >nul
 copy ".gitignore" "portable_MIGPT_Full\" >nul
 
 if exist "config.json" (
@@ -215,26 +290,26 @@ if exist "config.json" (
     set /p include_config=
     if /i "%include_config%"=="Y" (
         copy "config.json" "portable_MIGPT_Full\" >nul
-        echo 已包含配置文件
+        echo [信息] 已包含配置文件
     ) else (
-        echo 已排除配置文件
+        echo [信息] 已排除配置文件
     )
 ) else (
-    echo 未找到配置文件，首次启动时需要配置
+    echo [警告] 未找到配置文件，首次启动时需要配置
 )
 
 :: 创建依赖文件夹
-echo 正在创建requires文件夹...
+echo [信息] 正在创建requires文件夹...
 if not exist "portable_MIGPT_Full\requires\" mkdir "portable_MIGPT_Full\requires"
 
 :: 下载所有依赖
-echo 正在下载依赖包...
+echo [信息] 正在下载依赖包...
 pip download -r requirements.txt -d "portable_MIGPT_Full\requires"
 
 :: 创建一键启动脚本
 echo @echo off > "portable_MIGPT_Full\一键启动MIGPT.bat"
 echo chcp 65001 ^> nul >> "portable_MIGPT_Full\一键启动MIGPT.bat"
-echo title MIGPT 一键启动器 >> "portable_MIGPT_Full\一键启动MIGPT.bat"
+echo title MIGPT-易 一键启动器 >> "portable_MIGPT_Full\一键启动MIGPT.bat"
 echo. >> "portable_MIGPT_Full\一键启动MIGPT.bat"
 echo echo 正在检查环境... >> "portable_MIGPT_Full\一键启动MIGPT.bat"
 echo. >> "portable_MIGPT_Full\一键启动MIGPT.bat"
@@ -259,12 +334,8 @@ echo. >> "portable_MIGPT_Full\一键启动MIGPT.bat"
 echo :: 检查配置文件 >> "portable_MIGPT_Full\一键启动MIGPT.bat"
 echo if not exist config.json ( >> "portable_MIGPT_Full\一键启动MIGPT.bat"
 echo     echo 未找到配置文件，将为您打开配置界面 >> "portable_MIGPT_Full\一键启动MIGPT.bat"
-echo     python config_gui.py >> "portable_MIGPT_Full\一键启动MIGPT.bat"
-echo     if not exist config.json ( >> "portable_MIGPT_Full\一键启动MIGPT.bat"
-echo         echo 配置未完成，无法启动程序 >> "portable_MIGPT_Full\一键启动MIGPT.bat"
-echo         pause >> "portable_MIGPT_Full\一键启动MIGPT.bat"
-echo         exit /b 1 >> "portable_MIGPT_Full\一键启动MIGPT.bat"
-echo     ) >> "portable_MIGPT_Full\一键启动MIGPT.bat"
+echo     start cmd /k "python config_gui.py || (echo. ^&^& echo [错误] 配置界面启动失败 ^&^& pause)" >> "portable_MIGPT_Full\一键启动MIGPT.bat"
+echo     exit /b >> "portable_MIGPT_Full\一键启动MIGPT.bat"
 echo ) >> "portable_MIGPT_Full\一键启动MIGPT.bat"
 echo. >> "portable_MIGPT_Full\一键启动MIGPT.bat"
 
@@ -272,17 +343,36 @@ echo :: 清理缓存 >> "portable_MIGPT_Full\一键启动MIGPT.bat"
 echo if exist __pycache__ rmdir /s /q __pycache__ >> "portable_MIGPT_Full\一键启动MIGPT.bat"
 echo. >> "portable_MIGPT_Full\一键启动MIGPT.bat"
 
-echo echo 正在启动MIGPT... >> "portable_MIGPT_Full\一键启动MIGPT.bat"
-echo python -m MIGPT >> "portable_MIGPT_Full\一键启动MIGPT.bat"
-echo. >> "portable_MIGPT_Full\一键启动MIGPT.bat"
-echo pause >> "portable_MIGPT_Full\一键启动MIGPT.bat"
+echo echo 正在启动MIGPT-易... >> "portable_MIGPT_Full\一键启动MIGPT.bat"
+echo start cmd /k "python -m MIGPT || (echo. ^&^& echo [错误] 程序执行失败，请查看上方错误信息 ^&^& pause)" >> "portable_MIGPT_Full\一键启动MIGPT.bat"
+echo exit /b >> "portable_MIGPT_Full\一键启动MIGPT.bat"
+
+:: 创建配置界面启动脚本
+echo @echo off > "portable_MIGPT_Full\配置MIGPT.bat"
+echo chcp 65001 ^> nul >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo title MIGPT-易 配置界面 >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo. >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo echo 正在检查环境... >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo. >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo :: 检查Python >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo where python ^>nul 2^>nul >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo if %%ERRORLEVEL%% neq 0 ( >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo     echo 未检测到Python，请先安装Python 3.8或更高版本 >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo     echo 您可以从 https://www.python.org/downloads/ 下载Python >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo     pause >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo     exit /b 1 >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo ) >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo. >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo echo 正在启动MIGPT-易配置界面... >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo start cmd /k "python config_gui.py || (echo. ^&^& echo [错误] 配置界面启动失败 ^&^& pause)" >> "portable_MIGPT_Full\配置MIGPT.bat"
+echo exit /b >> "portable_MIGPT_Full\配置MIGPT.bat"
 
 echo.
 echo =============================================
 echo       完整版打包已完成！
 echo =============================================
 echo.
-echo MIGPT完整版已创建在portable_MIGPT_Full文件夹中。
+echo MIGPT-易完整版已创建在portable_MIGPT_Full文件夹中。
 echo 用户使用时只需：
 echo 1. 确保电脑已安装Python 3.8+
 echo 2. 运行"一键启动MIGPT.bat"
