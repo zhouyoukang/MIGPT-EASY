@@ -6,6 +6,7 @@ import os
 import random
 import string
 import time
+import asyncio
 from urllib import parse
 from aiohttp import ClientSession
 
@@ -49,24 +50,28 @@ class MiAccount:
             MiTokenStore(token_store) if isinstance(token_store, str) else token_store
         )
         self.token = token_store is not None and self.token_store.load_token()
-        self.login_attempts = 0
-        self.max_login_attempts = 3
-        self.last_login_time = 0
-        self.login_cooldown = 300  # 5分钟冷却时间
 
     async def login(self, sid):
-        # 检查是否需要冷却
-        current_time = time.time()
-        if self.login_attempts >= self.max_login_attempts and current_time - self.last_login_time < self.login_cooldown:
-            remaining_time = int(self.login_cooldown - (current_time - self.last_login_time))
-            _LOGGER.error(f"登录尝试次数过多，请等待 {remaining_time} 秒后再试")
+        # 检查会话是否存在
+        if self.session is None:
+            _LOGGER.error("会话对象为空，无法发送请求")
+            return False
+            
+        # 如果没有提供用户名或密码，直接返回False
+        if not self.username or not self.password:
+            _LOGGER.warning("未提供小米账号或密码，跳过登录")
             return False
 
         if not self.token:
             self.token = {"deviceId": get_random(16).upper()}
+            _LOGGER.debug(f"生成新的设备ID: {self.token['deviceId']}")
+        
         try:
+            _LOGGER.debug(f"开始登录小米账号: {self.username}, sid: {sid}")
             resp = await self._serviceLogin(f"serviceLogin?sid={sid}&_json=true")
+            
             if resp["code"] != 0:
+                _LOGGER.debug(f"serviceLogin返回非零代码: {resp['code']}, 尝试serviceLoginAuth2")
                 data = {
                     "_json": "true",
                     "qs": resp["qs"],
@@ -77,43 +82,59 @@ class MiAccount:
                     "hash": hashlib.md5(self.password.encode()).hexdigest().upper(),
                 }
                 resp = await self._serviceLogin("serviceLoginAuth2", data)
+                
                 if resp["code"] != 0:
                     # 处理验证码错误
                     if resp["code"] == 87001 and resp.get("type") == "manMachine":
-                        self.login_attempts += 1
-                        self.last_login_time = current_time
-                        _LOGGER.error(f"登录需要验证码，请尝试以下解决方法：")
-                        _LOGGER.error(f"1. 打开小米官网 https://account.xiaomi.com 手动登录一次")
-                        _LOGGER.error(f"2. 登录成功后，再次运行此程序")
-                        _LOGGER.error(f"3. 如果仍然失败，请等待几分钟后再试")
-                        _LOGGER.error(f"4. 确保您的账号密码正确")
+                        _LOGGER.error("登录需要验证码，请按照以下步骤解决：")
+                        _LOGGER.error("1. 打开小米官网 https://account.xiaomi.com 手动登录一次")
+                        _LOGGER.error("2. 登录成功后，删除token.json文件（如果存在）")
+                        _LOGGER.error("3. 重新启动程序")
+                        print("\n\n============= 验证码错误 =============")
+                        print("登录需要验证码，请按照以下步骤解决：")
+                        print("1. 打开小米官网 https://account.xiaomi.com 手动登录一次")
+                        print("2. 登录成功后，删除token.json文件（如果存在）")
+                        print("3. 重新启动程序")
+                        print("========================================\n\n")
+                        
+                        # 删除可能存在的token文件，强制下次重新登录
+                        if self.token_store:
+                            self.token_store.save_token(None)  # 这会删除token文件
+                            
                         return False
                     else:
                         _LOGGER.error(f"登录失败，错误码: {resp['code']}, 描述: {resp.get('desc', '未知错误')}")
                         return False
 
+            _LOGGER.debug(f"登录成功，获取userId和passToken")
             self.token["userId"] = resp["userId"]
             self.token["passToken"] = resp["passToken"]
 
+            _LOGGER.debug(f"获取serviceToken")
             serviceToken = await self._securityTokenService(
                 resp["location"], resp["nonce"], resp["ssecurity"]
             )
             self.token[sid] = (resp["ssecurity"], serviceToken)
+            
             if self.token_store:
+                _LOGGER.debug(f"保存token到{self.token_store.token_path}")
                 self.token_store.save_token(self.token)
             
-            # 登录成功，重置尝试次数
-            self.login_attempts = 0
+            _LOGGER.info(f"小米账号 {self.username} 登录成功")
             return True
 
         except Exception as e:
             self.token = None
             if self.token_store:
                 self.token_store.save_token()
-            _LOGGER.exception("Exception on login %s: %s", self.username, e)
+            _LOGGER.exception(f"登录异常: {e}")
             return False
 
     async def _serviceLogin(self, uri, data=None):
+        # 检查会话是否存在
+        if self.session is None:
+            raise Exception("会话对象为空，无法发送请求")
+            
         headers = {
             "User-Agent": "APP/com.xiaomi.mihome APPV/6.0.103 iosPassportSDK/3.9.0 iOS/14.4 miHSTS"
         }
@@ -122,31 +143,85 @@ class MiAccount:
             cookies["userId"] = self.token["userId"]
             cookies["passToken"] = self.token["passToken"]
         url = "https://account.xiaomi.com/pass/" + uri
-        async with self.session.request(
-            "GET" if data is None else "POST",
-            url,
-            data=data,
-            cookies=cookies,
-            headers=headers,
-            ssl = False,
-        ) as r:
-            raw = await r.read()
-        resp = json.loads(raw[11:])
-        _LOGGER.debug("%s: %s", uri, resp)
-        return resp
+        
+        _LOGGER.debug(f"发送请求到: {url}")
+        _LOGGER.debug(f"请求方法: {'GET' if data is None else 'POST'}")
+        _LOGGER.debug(f"请求cookies: {cookies}")
+        
+        try:
+            async with self.session.request(
+                "GET" if data is None else "POST",
+                url,
+                data=data,
+                cookies=cookies,
+                headers=headers,
+                ssl = False,
+                timeout=15,  # 增加超时时间
+            ) as r:
+                raw = await r.read()
+                
+                # 检查响应状态
+                if r.status != 200:
+                    _LOGGER.error(f"请求失败，状态码: {r.status}")
+                    _LOGGER.debug(f"响应内容: {raw}")
+                    raise Exception(f"HTTP错误: {r.status}")
+                    
+                # 处理响应内容
+                if len(raw) < 11:
+                    _LOGGER.error(f"响应内容过短: {raw}")
+                    raise Exception("响应内容异常")
+                    
+                try:
+                    resp = json.loads(raw[11:])
+                    _LOGGER.debug(f"{uri}: {resp}")
+                    return resp
+                except json.JSONDecodeError as e:
+                    _LOGGER.error(f"JSON解析错误: {e}")
+                    _LOGGER.debug(f"原始响应: {raw}")
+                    raise Exception(f"JSON解析错误: {e}")
+        except asyncio.TimeoutError:
+            _LOGGER.error("请求超时")
+            raise Exception("请求超时")
+        except Exception as e:
+            _LOGGER.error(f"请求异常: {e}")
+            raise
 
     async def _securityTokenService(self, location, nonce, ssecurity):
+        # 检查会话是否存在
+        if self.session is None:
+            raise Exception("会话对象为空，无法发送请求")
+            
         nsec = "nonce=" + str(nonce) + "&" + ssecurity
         clientSign = base64.b64encode(hashlib.sha1(nsec.encode()).digest()).decode()
-        async with self.session.get(
-            location + "&clientSign=" + parse.quote(clientSign)
-        ) as r:
-            serviceToken = r.cookies["serviceToken"].value
-            if not serviceToken:
-                raise Exception(await r.text())
-        return serviceToken
+        url = location + "&clientSign=" + parse.quote(clientSign)
+        
+        _LOGGER.debug(f"获取serviceToken: {url}")
+        
+        try:
+            async with self.session.get(url, timeout=15) as r:
+                if "serviceToken" not in r.cookies:
+                    error_text = await r.text()
+                    _LOGGER.error(f"未找到serviceToken，响应: {error_text}")
+                    raise Exception(f"未找到serviceToken: {error_text}")
+                    
+                serviceToken = r.cookies["serviceToken"].value
+                if not serviceToken:
+                    error_text = await r.text()
+                    _LOGGER.error(f"serviceToken为空，响应: {error_text}")
+                    raise Exception(f"serviceToken为空: {error_text}")
+                    
+                _LOGGER.debug(f"成功获取serviceToken")
+                return serviceToken
+        except Exception as e:
+            _LOGGER.error(f"获取serviceToken失败: {e}")
+            raise
 
     async def mi_request(self, sid, url, data, headers, relogin=True):
+        # 检查会话是否存在
+        if self.session is None:
+            _LOGGER.error("会话对象为空，无法发送请求")
+            return False
+            
         max_retries = 3
         retry_count = 0
         
@@ -163,7 +238,7 @@ class MiAccount:
                     
                     async with self.session.request(
                         method, url, data=content, cookies=cookies, headers=headers, 
-                        ssl=False, timeout=10
+                        ssl=False, timeout=15  # 增加超时时间
                     ) as r:
                         status = r.status
                         if status == 200:
@@ -235,6 +310,10 @@ class MiAccount:
         静默版本的mi_request，不输出日志信息
         专用于发送停止命令等不需要显示日志的场景
         """
+        # 检查会话是否存在
+        if self.session is None:
+            return False
+            
         max_retries = 3
         retry_count = 0
         
@@ -250,7 +329,7 @@ class MiAccount:
                     
                     async with self.session.request(
                         method, url, data=content, cookies=cookies, headers=headers, 
-                        ssl=False, timeout=10
+                        ssl=False, timeout=15  # 增加超时时间
                     ) as r:
                         status = r.status
                         if status == 200:
