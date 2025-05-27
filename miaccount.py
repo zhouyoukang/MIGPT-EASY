@@ -120,31 +120,166 @@ class MiAccount:
         return serviceToken
 
     async def mi_request(self, sid, url, data, headers, relogin=True):
-        if (self.token and sid in self.token) or await self.login(sid):  # Ensure login
-            cookies = {
-                "userId": self.token["userId"],
-                "serviceToken": self.token[sid][1],
-            }
-            content = data(self.token, cookies) if callable(data) else data
-            method = "GET" if data is None else "POST"
-            _LOGGER.info("%s %s", url, content)
-            async with self.session.request(
-                method, url, data=content, cookies=cookies, headers=headers
-            ) as r:
-                status = r.status
-                if status == 200:
-                    resp = await r.json(content_type=None)
-                    code = resp["code"]
-                    if code == 0:
-                        return resp
-                    if "auth" in resp.get("message", "").lower():
-                        status = 401
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count <= max_retries:
+            try:
+                if (self.token and sid in self.token) or await self.login(sid):  # Ensure login
+                    cookies = {
+                        "userId": self.token["userId"],
+                        "serviceToken": self.token[sid][1],
+                    }
+                    content = data(self.token, cookies) if callable(data) else data
+                    method = "GET" if data is None else "POST"
+                    _LOGGER.info("%s %s", url, content)
+                    
+                    async with self.session.request(
+                        method, url, data=content, cookies=cookies, headers=headers, 
+                        ssl=False, timeout=10
+                    ) as r:
+                        status = r.status
+                        if status == 200:
+                            try:
+                                resp = await r.json(content_type=None)
+                                code = resp["code"]
+                                if code == 0:
+                                    return resp
+                                
+                                # 处理特定错误码
+                                if code == 3:  # 一般为登录状态错误
+                                    _LOGGER.warn("登录状态错误，尝试重新登录...")
+                                    self.token = None  # 重置token
+                                    if retry_count < max_retries:
+                                        retry_count += 1
+                                        await self.login(sid)
+                                        continue
+                                        
+                                if "auth" in resp.get("message", "").lower():
+                                    status = 401
+                            except Exception as json_err:
+                                _LOGGER.error("解析JSON响应失败: %s", json_err)
+                                resp = await r.text()
+                        else:
+                            resp = await r.text()
+                            
+                    # 特殊处理401错误（认证错误）
+                    if status == 401 and relogin:
+                        _LOGGER.warn("身份验证错误，尝试重新登录... (尝试 %d/%d)", retry_count + 1, max_retries)
+                        self.token = None  # 重置token
+                        if retry_count < max_retries:
+                            retry_count += 1
+                            continue
+                        else:
+                            raise Exception(f"重新登录尝试{max_retries}次后仍然失败")
+                            
+                    # 特殊处理cookie相关错误
+                    if isinstance(resp, str) and ("cookie" in resp.lower() or "userId" in resp.lower()):
+                        _LOGGER.warn("Cookie错误，尝试重新登录... (尝试 %d/%d)", retry_count + 1, max_retries)
+                        self.token = None  # 重置token
+                        if retry_count < max_retries:
+                            retry_count += 1
+                            continue
+                    
+                    # 如果是其他类型的错误，直接抛出
+                    if status != 200 or (isinstance(resp, dict) and resp.get("code", 0) != 0):
+                        error_msg = f"请求失败: 状态码={status}, 响应={resp}"
+                        _LOGGER.error(error_msg)
+                        raise Exception(f"Error {url}: {resp}")
+                        
+                    return resp
                 else:
-                    resp = await r.text()
-            if status == 401 and relogin:
-                _LOGGER.warn("Auth error on request %s %s, relogin...", url, resp)
-                self.token = None  # Auth error, reset login
-                return await self.mi_request(sid, url, data, headers, False)
-        else:
-            resp = "Login failed"
+                    if retry_count < max_retries:
+                        retry_count += 1
+                        _LOGGER.warn("登录失败，重试中... (尝试 %d/%d)", retry_count, max_retries)
+                        continue
+                    resp = "Login failed after multiple attempts"
+            except Exception as e:
+                if retry_count < max_retries:
+                    retry_count += 1
+                    _LOGGER.warn("请求发生错误，重试中... (尝试 %d/%d): %s", retry_count, max_retries, e)
+                    continue
+                raise e
+                
         raise Exception(f"Error {url}: {resp}")
+
+    async def mi_request_silent(self, sid, url, data, headers, relogin=True):
+        """
+        静默版本的mi_request，不输出日志信息
+        专用于发送停止命令等不需要显示日志的场景
+        """
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count <= max_retries:
+            try:
+                if (self.token and sid in self.token) or await self.login(sid):  # Ensure login
+                    cookies = {
+                        "userId": self.token["userId"],
+                        "serviceToken": self.token[sid][1],
+                    }
+                    content = data(self.token, cookies) if callable(data) else data
+                    method = "GET" if data is None else "POST"
+                    
+                    async with self.session.request(
+                        method, url, data=content, cookies=cookies, headers=headers, 
+                        ssl=False, timeout=10
+                    ) as r:
+                        status = r.status
+                        if status == 200:
+                            try:
+                                resp = await r.json(content_type=None)
+                                code = resp["code"]
+                                if code == 0:
+                                    return resp
+                                
+                                # 处理特定错误码
+                                if code == 3:  # 一般为登录状态错误
+                                    self.token = None  # 重置token
+                                    if retry_count < max_retries:
+                                        retry_count += 1
+                                        await self.login(sid)
+                                        continue
+                                    
+                                if "auth" in resp.get("message", "").lower():
+                                    status = 401
+                            except Exception:
+                                resp = await r.text()
+                        else:
+                            resp = await r.text()
+                            
+                    # 特殊处理401错误（认证错误）
+                    if status == 401 and relogin:
+                        self.token = None  # 重置token
+                        if retry_count < max_retries:
+                            retry_count += 1
+                            continue
+                        else:
+                            return False
+                            
+                    # 特殊处理cookie相关错误
+                    if isinstance(resp, str) and ("cookie" in resp.lower() or "userId" in resp.lower()):
+                        self.token = None  # 重置token
+                        if retry_count < max_retries:
+                            retry_count += 1
+                            continue
+                    
+                    # 如果是其他类型的错误，直接返回False
+                    if status != 200 or (isinstance(resp, dict) and resp.get("code", 0) != 0):
+                        return False
+                        
+                    return resp
+                else:
+                    if retry_count < max_retries:
+                        retry_count += 1
+                        continue
+                    else:
+                        return False
+            except Exception:
+                if retry_count < max_retries:
+                    retry_count += 1
+                    continue
+                else:
+                    return False
+                
+        return False
