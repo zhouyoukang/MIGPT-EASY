@@ -4,7 +4,7 @@
 
 > 让您的小爱同学秒变AI助手，支持多设备、多模型、HomeAssistant集成，流畅对话无等待
 
-<img src="效果.jpg" width="600">
+<img src="效果.jpg" width   宽度="600">
 
 ## 项目亮点
 
@@ -17,9 +17,95 @@
 
 ## 快速开始
 
-```bash
+```bash   ”“bash   ”“bash”“bash
 # 1. 克隆项目
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：使用以下命令克隆仓库：
+
+```bash   ”“bash   ”“bash”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash   ”“bash”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash   ”“bash”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash   ”“bash”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash   ”“bash”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash   ”“bash”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash   ”“bash”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash
 git clone https://github.com/zhouyoukang/MIGPT-easy.git
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+
+```bash   ”“bash   ”“bash”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash   ”“bash”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash   ”“bash”“bash```bash
+   ""bash   ""bash""bash
+```
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash   ”“bash”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash   ”“bash”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash   ”“bash”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash   ”“bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git使用以下命令克隆仓库：
+
+```bash
+git clone https://github.com/zhouyoukang/MIGPT-easy.git
+```
+```
+```
+```
+```
+```
+```
+```
 cd MIGPT-easy
 
 # 2. 运行批处理菜单
@@ -272,35 +358,51 @@ MIGPT-易提供了完整的图形化配置界面，包含以下设置选项卡�
 
 #### DeepSeek模型配置
 
-```json
+```json   ' ' ' jsonJson ' ' ' Json```json
+{
+  "name": "John Doe",
+  "age": 30,
+  "address":
 {
   "api_type": "custom",
-  "api_key": "sk-your-deepseek-key",
+  "api_key": "sk-your-deepseek-key","api_key": "sk-您的 DeepSeek 密钥
   "api_base": "https://api.deepseek.com",
-  "model_name": "deepseek-chat"
+  "model_name": "deepseek-chat""模型名称": "deepseek-chat
 }
 ```
 
 #### Claude模型配置
 
-```json
+```json   ' ' ' json```json
+{
+  "name": "John Doe",   “name”： “John Doe”，
+  "age": 30,```bash   “年龄”:30,
+   ""bash   ""bash""bash
+```
+  "address":
 {
   "api_type": "custom",
-  "api_key": "your-claude-key",
+  "api_key": "your-claude-key",```bash
+   ""bash   ""bash""bash
+```
   "api_base": "https://api.anthropic.com/v1",
-  "model_name": "claude-3-haiku-20240307"
+  "model_name": "claude-3-haiku-20240307""模型名称": "claude-3-haiku-20240307"
 }
 ```
 
 ### HomeAssistant详细配置
 
-```json
+```json   ' ' ' jsonJson ' ' ' Json```json
+{
+  "name": "John Doe",   “name”： “John Doe”，
+  "age": 30,   “年龄”:30,
+  "address":   “地址”:
 {
   "homeassistant": {
-    "enabled": true,
-    "url": "http://your-ha-ip:8123",
-    "token": "your-long-lived-access-token",
-    "verify_ssl": false,
+    "enabled": true,   “启用”:没错,
+    "url": "http://your-ha-ip:8123","url": "http://您的家庭网络地址：8123
+    "token": "your-long-lived-access-token","token": "您的长期访问令牌
+    "verify_ssl": false,   "verify_ssl": false， 译为： "验证 SSL": false
     "device_mapping": {
       "客厅灯": "light.living_room_light",
       "卧室灯": "light.bedroom_light"
@@ -324,7 +426,7 @@ MIGPT-易提供了完整的图形化配置界面，包含以下设置选项卡�
    - 答：在设备选择菜单中，输入多个设备编号（用逗号分隔）或输入"all"选择所有设备。
 
 5. **问：如何解决HomeAssistant连接问题？**
-   - 答：确保HomeAssistant服务器地址和访问令牌正确，并检查网络连接。使用 `debug` 命令切换到调试模式获取更多信息。
+   - 答：确保HomeAssistant服务器地址和访问令牌正确，并检查网络连接。使用 `debug` 命令切换到调试模式获取更多信息。   调试
 
 6. **问：遇到"验证码输入错误"的问题怎么办？**
    - 答：这是小米账号的安全机制被触发，需要进行以下操作：
@@ -333,6 +435,7 @@ MIGPT-易提供了完整的图形化配置界面，包含以下设置选项卡�
      3. 重新启动MIGPT程序
      4. 如果仍然失败，请等待5-10分钟后再试
      5. 确保您的账号密码正确无误
+     6. 保持科学上网环境
 
 7. **问：批处理文件点击后闪退怎么办？**
    - 答：这可能是由于Python环境问题导致的，尝试以下解决方法：
@@ -386,8 +489,8 @@ MIGPT-易提供了完整的图形化配置界面，包含以下设置选项卡�
 ## 致谢
 
 - @[yihong0618](https://github.com/yihong0618) 的 [xiaogpt](https://github.com/yihong0618/xiaogpt)
-- @[acheong08](https://github.com/acheong08) 的 [ChatGPT](https://github.com/acheong08/ChatGPT)
-- @[Yonsm](https://github.com/Yonsm) 的 [MiService](https://github.com/Yonsm/MiService)
+- @[acheong08](https://github.com/acheong08) 的 [ChatGPT](https://github.com/acheong08/ChatGPT)- @ [] (https://github.com/acheong08 acheong08)的[](https://github.com/acheong08/ChatGPT ChatGPT)
+- @[Yonsm](https://github.com/Yonsm) 的 [MiService](https://github.com/Yonsm/MiService)- @[Yonsm](https://github.com/Yonsm) 的 [MiService](https://github.com/Yonsm/MiService) ：[米服务](https://github.com/Yonsm/MiService
 - @[Afool4U](https://github.com/Afool4U) 的 [MIGPT](https://github.com/Afool4U/MIGPT)
 
 ## 项目信息
@@ -400,7 +503,7 @@ MIGPT-易提供了完整的图形化配置界面，包含以下设置选项卡�
 ## 联系方式
 
 - **项目维护者**: AIOTVR (周友康)
-- **QQ**: 3228675807
+- **QQ**: 3228675807   - ** qq **: 3228675807
 - **QQ交流群**: 1034819300
-- **哔哩哔哩**: [AIOTVR](https://space.bilibili.com/AIOTVR)
+- **哔哩哔哩**: [AIOTVR](https://www.bilibili.com/video/BV1i1j9zuEE3?vd_source=23eb4e0ee1ff28d500ad657ae8c6dea7)
 - **GitHub**: [zhouyoukang/MIGPT-easy](https://github.com/zhouyoukang/MIGPT-easy)
